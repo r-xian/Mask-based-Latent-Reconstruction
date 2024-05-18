@@ -68,7 +68,7 @@ seed: null
 gpuid: null
 seed_and_gpuid: [-1, 0]
 work_dir: /mnt/output/
-save_tb: true
+save_tb: false
 save_buffer: false
 save_video: false
 save_model: true
@@ -76,7 +76,7 @@ detach_encoder: false
 # log
 log_interval: 100
 # wandb
-wandb: false
+wandb: true
 
 # SAR
 num_attn_layer: 2

@@ -390,18 +390,9 @@ def main(args: DictConfig) -> None:
     + str(args.batch_size) + '-s' + str(args.seed) + '-' + args.agent
 
     if args.wandb:
-        # wandb.init(project=f'{args.agent}_dmc',
-        wandb.init(project=f'MTM-DMC-v2-final',
-        # wandb.init(project=f'MTM-DMC-Ablation',
-        # wandb.init(project=f'AblateMask-Cartpole',
-        # wandb.init(project=f'AblateMask-Cheetah',
-        # wandb.init(project=f'AblateMask-Reacher',
-        # wandb.init(project=f'AblateMask-Walker',
-        # wandb.init(project=f'AblateMask-Ball',
-        # wandb.init(project=f'AblateMask-Finger',
+        wandb.init(project=f'VisualRL',
                    config=args,
                    name=exp_name,
-                #    group=ts,
                    group=ori_exp_name,
                    tags=[
                        env_name,
