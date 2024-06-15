@@ -7,7 +7,7 @@ import copy
 import json
 import math
 import os
-# os.environ['MUJOCO_GL'] = 'egl'
+os.environ['MUJOCO_GL'] = 'egl'
 import random
 import sys
 import time
@@ -348,7 +348,7 @@ def make_agent(obs_shape, action_shape, args, device):
         assert 'agent is not supported: %s' % args.agent
 
 
-@hydra.main(config_name="config")
+@hydra.main(config_path='./', config_name="config")
 def main(args: DictConfig) -> None:
     args.init_steps *= args.action_repeat
     args.log_interval *= args.action_repeat
@@ -513,5 +513,5 @@ def main(args: DictConfig) -> None:
 
 
 if __name__ == '__main__':
-    torch.multiprocessing.set_start_method('spawn')
+    #torch.multiprocessing.set_start_method('spawn')
     main()
