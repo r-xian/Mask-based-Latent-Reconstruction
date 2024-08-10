@@ -334,32 +334,6 @@ class ReplayBuffer(Dataset):
         }
         return (*self.sample_aug(original_augment=True), spr_samples)
 
-    
-    # # v1
-    # def sample_spr(self):
-    #     idxs = np.random.randint(0,
-    #                              self.capacity - self.jumps -
-    #                              1 if self.full else self.idx - self.jumps - 1,
-    #                              size=self.auxiliary_task_batch_size)
-    #     idxs = idxs.reshape(-1, 1)
-    #     step = np.arange(self.jumps + 1).reshape(1, -1)
-    #     idxs = idxs + step
-    #     obses = torch.as_tensor(self.obses[idxs], device=self.device).float()
-    #     next_obses = torch.as_tensor(self.next_obses[idxs],
-    #                                  device=self.device).float()
-    #     actions = torch.as_tensor(self.actions[idxs], device=self.device)
-    #     rewards = torch.as_tensor(self.rewards[idxs], device=self.device)
-    #     not_dones = torch.as_tensor(self.not_dones[idxs], device=self.device)
-
-    #     spr_samples = {
-    #         'observation': obses.transpose(0, 1).unsqueeze(3),
-    #         'action': actions.transpose(0, 1),
-    #         'reward': rewards.transpose(0, 1),
-    #     }
-    #     # print(obses.transpose(0, 1).unsqueeze(3).size())
-    #     return (*self.sample_aug(original_augment=True), spr_samples)
-    
-
     def sample_aug(self, original_augment=False):
         idxs = np.random.randint(0,
                                  self.capacity if self.full else self.idx,

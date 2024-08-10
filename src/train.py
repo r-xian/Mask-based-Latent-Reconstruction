@@ -12,6 +12,7 @@ import random
 import sys
 import time
 
+import logging
 import dmc2gym
 import gym
 import hydra
@@ -66,7 +67,7 @@ def evaluate(env, agent, video, num_episodes, L, step, args):
     L.dump(step)
 
 
-def make_agent(obs_shape, action_shape, args, device):
+def make_agent(obs_shape, action_shape, args, device, debug):
     return MTMSacAgent(
             obs_shape=obs_shape,
             action_shape=action_shape,
@@ -206,10 +207,15 @@ def main(args: DictConfig) -> None:
         jumps=args.jumps,
     )
 
+    logging.basicConfig(level=logging.INFO)
+    debug = logging.getLogger(__name__)
+
     agent = make_agent(obs_shape=obs_shape,
                        action_shape=action_shape,
                        args=args,
-                       device=device)
+                       device=device, debug=debug)
+    
+    
     replay_buffer.add_agent(agent)
 
     L = Logger(args.work_dir, use_tb=args.save_tb, use_wandb=args.wandb)

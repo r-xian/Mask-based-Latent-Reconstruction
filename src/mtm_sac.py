@@ -5,7 +5,7 @@
 
 import copy
 import math
-
+import logging
 import numpy as np
 from numpy.core.fromnumeric import shape
 import torch
@@ -391,6 +391,7 @@ class MTMSacAgent(object):
             obs_shape,
             action_shape,
             device,
+            debug,
             augmentation=[],
             transition_model_type='probabilistic',
             transition_model_layer_width=512,
@@ -453,7 +454,7 @@ class MTMSacAgent(object):
         self.detach_encoder = detach_encoder
         self.encoder_type = encoder_type
         self.encoder_feature_dim = encoder_feature_dim
-
+        self.debug = debug
         self.jumps = jumps
         self.momentum_tau = momentum_tau
 
@@ -605,67 +606,103 @@ class MTMSacAgent(object):
         self.log_alpha_optimizer.step()
 
     def update_mtm(self, mtm_kwargs, L, step):
+        #1. sample
+        self.debug.info(f'0.Sample')
         observation = mtm_kwargs["observation"] # [1+self.jumps, B, 9, 1, 100, 100]
         action = mtm_kwargs["action"]   # [1+self.jumps, B, dim_A]
         reward = mtm_kwargs["reward"]   # [1+self.jumps, 1]
-
+        # these non augmented
+        self.debug.info(f'1.Sample')
+        self.debug.info(f'observation shape: {observation.size()}')
+        self.debug.info(f'action shape: {action.size()}')
+        self.debug.info(f'reward shape: {reward.size()}')
+        # self.debug.info(f'-------------------\n')
+        
+        #2. size
+        self.debug.info(f'2.Size')
         T, B, C = observation.size()[:3]
         Z = self.encoder_feature_dim
+        self.debug.info(f'T: {T}, B: {B}, C: {C}, Z: {Z}')
 
+        # 3. position
+        self.debug.info(f'3.Position')
         position = self.MTM.position(T).transpose(0, 1).to(self.device) # (1, T, Z) -> (T, 1, Z)
         expand_pos_emb = position.expand(T, B, -1)  # (T, B, Z)
+        self.debug.info(f'position shape: {position.size()}')
+        self.debug.info(f'expand_pos_emb shape: {expand_pos_emb.size()}')
 
+        # 4. mask
+        self.debug.info(f'4.Mask')
         mask = self.MTM.masker()  # (T, 1, 84, 84)
+        self.debug.info(f'mask shape: {mask.size()}')
         mask = mask[:, None].expand(mask.size(0), B, *mask.size()[1:]).flatten(0, 1)    # (T*B, ...)
+        self.debug.info(f'mask reshaped: {mask.size()}')
 
+        # 5. x -> observation
+        self.debug.info(f'5.x')
         x = observation.squeeze(-3).flatten(0, 1)
+        self.debug.info(f'x shape: {x.size()}')
         x = x * (1 - mask.float().to(self.device))
+        self.debug.info(f'x masked shape: {x.size()}')
         x = self.MTM.transform(x, augment=True)
+        self.debug.info(f'x transformed shape: {x.size()}')
         x = self.MTM.encoder(x)
+        self.debug.info(f'x encoded shape: {x.size()}')
         x = x.view(T, B, Z)
+        self.debug.info(f'x reshaped shape: {x.size()}')
 
+        # 6. a_vis -> action
+        self.debug.info(f'6.a_vis')
         a_vis = action
         a_vis_size = a_vis.size(0)
         a_vis = self.MTM.action_emb(a_vis.flatten(0, 1)).view(a_vis_size, B, Z)
+        self.debug.info(f'a_vis shape: {a_vis.size()}')
 
+        # 7. x_full
+        self.debug.info(f'7.x_full')
         x_full = torch.zeros(2 * T, B, Z).to(self.device)
+        self.debug.info(f'x_full shape: {x_full.size()}')
         x_full[::2] = x + expand_pos_emb
+        self.debug.info(f'x_full shape: {x_full.size()}')
         x_full[1::2] = a_vis + expand_pos_emb
+        self.debug.info(f'x_full shape: {x_full.size()}')
 
+        # 8. transformer
+        self.debug.info(f'8.transformer')
         x_full = x_full.transpose(0, 1)
         for i in range(len(self.MTM.transformer)):
             x_full = self.MTM.transformer[i](x_full)
-        # x_full = self.trans_ln(x_full)
         x_full = x_full.transpose(0, 1)
+        self.debug.info(f'x_full shape: {x_full.size()}')
 
+        # 9. pred_masked_s
+        self.debug.info(f'9.pred_masked_s')
         pred_masked_s = x_full[::2].flatten(0, 1) # (M*B, Z)
+        self.debug.info(f'pred_masked_s shape: {pred_masked_s.size()}')
 
+        # 10. target_obs
+        self.debug.info(f'10.target_obs')
         target_obs = observation.squeeze(-3).flatten(0, 1)
+        self.debug.info(f'target_obs shape: {target_obs.size()}')
         target_obs = self.MTM.transform(target_obs, augment=True)
+        self.debug.info(f'target_obs transformer shape: {target_obs.size()}')
         with torch.no_grad():
             target_masked_s = self.MTM.target_encoder(target_obs)
+        self.debug.info(f'target_masked_s shape: {target_masked_s.size()}')
+        
         state_loss = self.MTM.spr_loss(pred_masked_s, target_masked_s, observation)
-
         loss = state_loss
-
 
         self.mtm_optimizer.zero_grad()
         loss.backward()
         model_grad_norm = torch.nn.utils.clip_grad_norm_(
             self.MTM.parameters(), 10)
         self.mtm_optimizer.step()
-
-
         if step % self.log_interval == 0:
             L.log('train/mtm_loss', loss, step)
-
         if self.mtm_lrscheduler is not None:
             self.mtm_lrscheduler.step()
             L.log('train/mtm_lr', self.mtm_optimizer.param_groups[0]['lr'], step)
-            # if self.encoder_lrscheduler is not None:
-            #     self.encoder_lrscheduler.step()
-            #     L.log('train/ctmr_encoder_lr', self.encoder_optimizer.param_groups[0]['lr'], step)
-        
 
 
     def update(self, replay_buffer, L, step):
@@ -679,26 +716,26 @@ class MTMSacAgent(object):
         if step % self.log_interval == 0:
             L.log('train/batch_reward', reward.mean(), step)
         
-        self.update_critic(obs, action, reward, next_obs, not_done, L, step)
+        #self.update_critic(obs, action, reward, next_obs, not_done, L, step)
         self.update_mtm(mtm_kwargs, L, step)
 
-        if step % self.actor_update_freq == 0:
-            self.update_actor_and_alpha(obs, L, step)
+        # if step % self.actor_update_freq == 0:
+        #     self.update_actor_and_alpha(obs, L, step)
 
-        if step % self.critic_target_update_freq == 0:
-            utils.soft_update_params(self.critic.Q1, self.critic_target.Q1,
-                                     self.critic_tau)
-            utils.soft_update_params(self.critic.Q2, self.critic_target.Q2,
-                                     self.critic_tau)
-            utils.soft_update_params(self.critic.encoder,
-                                     self.critic_target.encoder,
-                                     self.encoder_tau)
-            utils.soft_update_params(self.MTM.encoder,
-                                     self.MTM.target_encoder,
-                                     self.momentum_tau)
-            utils.soft_update_params(self.MTM.global_classifier,
-                                     self.MTM.global_target_classifier,
-                                     self.momentum_tau)
+        # if step % self.critic_target_update_freq == 0:
+        #     utils.soft_update_params(self.critic.Q1, self.critic_target.Q1,
+        #                              self.critic_tau)
+        #     utils.soft_update_params(self.critic.Q2, self.critic_target.Q2,
+        #                              self.critic_tau)
+        #     utils.soft_update_params(self.critic.encoder,
+        #                              self.critic_target.encoder,
+        #                              self.encoder_tau)
+        #     utils.soft_update_params(self.MTM.encoder,
+        #                              self.MTM.target_encoder,
+        #                              self.momentum_tau)
+        #     utils.soft_update_params(self.MTM.global_classifier,
+        #                              self.MTM.global_target_classifier,
+        #                              self.momentum_tau)
 
     def save(self, model_dir, step):
         torch.save(self.actor.state_dict(),
