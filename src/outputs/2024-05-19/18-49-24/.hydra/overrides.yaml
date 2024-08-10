@@ -1,6 +1,0 @@
-- jumps=15
-- seed=1
-- agent=mtm_sac
-- num_env_steps=100000
-- work_dir=output
-- wandb=false
