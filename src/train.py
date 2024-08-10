@@ -135,7 +135,7 @@ def main(args: DictConfig) -> None:
     args.task_name = args.task_name or args.env_name.split('/')[1]
     if args.seed == -1:
         args.seed = np.random.randint(1, 1000000)
-    torch.cuda.set_device(args.gpuid)
+    #torch.cuda.set_device(args.gpuid) #use CUDA_VISIBLE_DEVICES=1 python train.py
     utils.set_seed_everywhere(args.seed)
     env = dmc2gym.make(domain_name=args.domain_name,
                        task_name=args.task_name,
