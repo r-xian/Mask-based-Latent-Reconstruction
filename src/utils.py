@@ -194,6 +194,7 @@ def preprocess_obs(obs, bits=5):
 class ReplayBuffer(Dataset):
     """Buffer to store environment transitions."""
     def __init__(self,
+                 debug,
                  obs_shape,
                  action_shape,
                  capacity,
@@ -203,6 +204,7 @@ class ReplayBuffer(Dataset):
                  transform=None,
                  auxiliary_task_batch_size=64,
                  jumps=5):
+        self.debug = debug
         self.capacity = capacity
         self.batch_size = batch_size
         self.device = device
@@ -305,28 +307,33 @@ class ReplayBuffer(Dataset):
 
     # v2
     def sample_spr(self):   # sample batch for auxiliary task
+        self.debug.info(f'Function: sampling spr')
         idxs = np.random.randint(0,
                                  self.capacity - self.jumps -
                                  1 if self.full else self.idx - self.jumps - 1,
                                  size=self.auxiliary_task_batch_size*2)
                                 #  size=self.auxiliary_task_batch_size)
         idxs = idxs.reshape(-1, 1)
+        self.debug.info(f'creating idxs: {idxs.shape}')
+        
         step = np.arange(self.jumps + 1).reshape(1, -1) # this is a range
         idxs = idxs + step
-
+        self.debug.info(f'idxs with step: {idxs.shape}')
+        
         real_dones = torch.as_tensor(self.real_dones[idxs], device=self.device)   # (B, jumps+1, 1)
         # we add this to avoid sampling the episode boundaries
         valid_idxs = torch.where((real_dones.mean(1)==0).squeeze(-1))[0].cpu().numpy()
         idxs = idxs[valid_idxs] # (B, jumps+1)
         idxs = idxs[:self.auxiliary_task_batch_size] if idxs.shape[0] >= self.auxiliary_task_batch_size else idxs
         self.current_auxiliary_batch_size = idxs.shape[0]
+        self.debug.info(f'valid idxs: {idxs.shape}')
 
         obses = torch.as_tensor(self.obses[idxs], device=self.device).float()   # (B, jumps+1, 3*3=9, 100, 100)
         next_obses = torch.as_tensor(self.next_obses[idxs], device=self.device).float()
         actions = torch.as_tensor(self.actions[idxs], device=self.device)
         rewards = torch.as_tensor(self.rewards[idxs], device=self.device)
         not_dones = torch.as_tensor(self.not_dones[idxs], device=self.device)   # (B, jumps+1, 1)
-    
+        self.debug.info(f'obses: {obses.shape}')
         spr_samples = {
             'observation': obses.transpose(0, 1).unsqueeze(3),
             'action': actions.transpose(0, 1),

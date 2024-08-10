@@ -157,10 +157,6 @@ def main(args: DictConfig) -> None:
     ts = time.gmtime()
     ts = time.strftime("%m%dT%H", ts)
     ori_exp_name = 'Ablation-FeatMasking'    # time span - mask ratio - block size - grid size
-    # ori_exp_name = 'NoAction-K40'    # re-run
-    # ori_exp_name = 'Enc-L6-K32-BLK8-Mask50'    # re-run
-    # ori_exp_name = 'MR050_PS7_Mask_Dec32_K6W100_ABSZ256'    # re-run
-    # ori_exp_name = 'Baseline-BSZ512'    # re-run
     env_name = ori_exp_name + '-' + args.domain_name + '-' + args.task_name
     exp_name = env_name + ts + '-im' + str(args.image_size) +'-b'  \
     + str(args.batch_size) + '-s' + str(args.seed) + '-' + args.agent
@@ -177,6 +173,9 @@ def main(args: DictConfig) -> None:
                        ts.split('T')[0],
                    ],
                    settings=wandb.Settings(start_method="fork"))
+    # for debug stm pringting
+    logging.basicConfig(level=logging.INFO)
+    debug = logging.getLogger(__name__)
 
     args.work_dir = args.work_dir + '/' + f'{args.agent}_dmc' + '/' + exp_name
     utils.make_dir(args.work_dir)
@@ -200,6 +199,7 @@ def main(args: DictConfig) -> None:
         pre_aug_obs_shape = obs_shape
 
     replay_buffer = utils.ReplayBuffer(
+        debug=debug,
         obs_shape=pre_aug_obs_shape,
         action_shape=action_shape,
         capacity=args.replay_buffer_capacity,
@@ -210,8 +210,6 @@ def main(args: DictConfig) -> None:
         jumps=args.jumps,
     )
 
-    logging.basicConfig(level=logging.INFO)
-    debug = logging.getLogger(__name__)
 
     agent = make_agent(obs_shape=obs_shape,
                        action_shape=action_shape,
