@@ -607,7 +607,6 @@ class MTMSacAgent(object):
 
     def update_mtm(self, mtm_kwargs, L, step):
         #1. sample
-        self.debug.info(f'0.Sample')
         observation = mtm_kwargs["observation"] # [1+self.jumps, B, 9, 1, 100, 100]
         action = mtm_kwargs["action"]   # [1+self.jumps, B, dim_A]
         reward = mtm_kwargs["reward"]   # [1+self.jumps, 1]
