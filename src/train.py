@@ -74,6 +74,7 @@ def make_agent(obs_shape, action_shape, args, device, debug):
             obs_shape=obs_shape,
             action_shape=action_shape,
             device=device,
+            debug=debug,
             augmentation=args.augmentation,
             transition_model_type=args.transition_model_type,
             transition_model_layer_width=args.transition_model_layer_width,
@@ -215,7 +216,8 @@ def main(args: DictConfig) -> None:
     agent = make_agent(obs_shape=obs_shape,
                        action_shape=action_shape,
                        args=args,
-                       device=device, debug=debug)
+                       device=device,
+                       debug=debug)
     
     
     replay_buffer.add_agent(agent)
