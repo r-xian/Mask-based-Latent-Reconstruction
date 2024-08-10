@@ -8,6 +8,8 @@ import json
 import math
 import os
 os.environ['MUJOCO_GL'] = 'egl'
+os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
+
 import random
 import sys
 import time
