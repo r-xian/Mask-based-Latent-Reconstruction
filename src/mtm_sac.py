@@ -613,9 +613,9 @@ class MTMSacAgent(object):
         reward = mtm_kwargs["reward"]   # [1+self.jumps, 1]
         # these non augmented
         self.debug.info(f'1. Samples')
-        self.debug.info(f'observation shape: {observation.size()}')
-        self.debug.info(f'action shape: {action.size()}')
-        self.debug.info(f'reward shape: {reward.size()}')
+        self.debug.info(f'observation shape: {observation.shape}')
+        self.debug.info(f'action shape: {action.shape}')
+        self.debug.info(f'reward shape: {reward.shape}')
         # self.debug.info(f'-------------------\n')
         
         #2. size
@@ -628,44 +628,44 @@ class MTMSacAgent(object):
         self.debug.info(f'3.Position')
         position = self.MTM.position(T).transpose(0, 1).to(self.device) # (1, T, Z) -> (T, 1, Z)
         expand_pos_emb = position.expand(T, B, -1)  # (T, B, Z)
-        self.debug.info(f'position shape: {position.size()}')
-        self.debug.info(f'expand_pos_emb shape: {expand_pos_emb.size()}')
+        self.debug.info(f'position shape: {position.shape}')
+        self.debug.info(f'expand_pos_emb shape: {expand_pos_emb.shape}')
 
         # 4. mask
         self.debug.info(f'4.Mask')
         mask = self.MTM.masker()  # (T, 1, 84, 84)
-        self.debug.info(f'mask shape: {mask.size()}')
+        self.debug.info(f'mask shape: {mask.shape}')
         mask = mask[:, None].expand(mask.size(0), B, *mask.size()[1:]).flatten(0, 1)    # (T*B, ...)
-        self.debug.info(f'mask reshaped: {mask.size()}')
+        self.debug.info(f'mask reshaped: {mask.shape}')
 
         # 5. x -> observation
         self.debug.info(f'5.x')
         x = observation.squeeze(-3).flatten(0, 1)
-        self.debug.info(f'x shape: {x.size()}')
+        self.debug.info(f'x shape: {x.shape}')
         x = x * (1 - mask.float().to(self.device))
-        self.debug.info(f'x masked shape: {x.size()}')
+        self.debug.info(f'x masked shape: {x.shape}')
         x = self.MTM.transform(x, augment=True)
-        self.debug.info(f'x transformed shape: {x.size()}')
+        self.debug.info(f'x transformed shape: {x.shape}')
         x = self.MTM.encoder(x)
-        self.debug.info(f'x encoded shape: {x.size()}')
+        self.debug.info(f'x encoded shape: {x.shape}')
         x = x.view(T, B, Z)
-        self.debug.info(f'x reshaped shape: {x.size()}')
+        self.debug.info(f'x reshaped shape: {x.shape}')
 
         # 6. a_vis -> action
         self.debug.info(f'6.a_vis')
         a_vis = action
         a_vis_size = a_vis.size(0)
         a_vis = self.MTM.action_emb(a_vis.flatten(0, 1)).view(a_vis_size, B, Z)
-        self.debug.info(f'a_vis shape: {a_vis.size()}')
+        self.debug.info(f'a_vis shape: {a_vis.shape}')
 
         # 7. x_full
         self.debug.info(f'7.x_full')
         x_full = torch.zeros(2 * T, B, Z).to(self.device)
-        self.debug.info(f'x_full shape: {x_full.size()}')
+        self.debug.info(f'x_full shape: {x_full.shape}')
         x_full[::2] = x + expand_pos_emb
-        self.debug.info(f'x_full shape: {x_full.size()}')
+        self.debug.info(f'x_full shape: {x_full.shape}')
         x_full[1::2] = a_vis + expand_pos_emb
-        self.debug.info(f'x_full shape: {x_full.size()}')
+        self.debug.info(f'x_full shape: {x_full.shape}')
 
         # 8. transformer
         self.debug.info(f'8.transformer')
@@ -673,22 +673,22 @@ class MTMSacAgent(object):
         for i in range(len(self.MTM.transformer)):
             x_full = self.MTM.transformer[i](x_full)
         x_full = x_full.transpose(0, 1)
-        self.debug.info(f'x_full shape: {x_full.size()}')
+        self.debug.info(f'x_full shape: {x_full.shape}')
 
         # 9. pred_masked_s
         self.debug.info(f'9.pred_masked_s')
         pred_masked_s = x_full[::2].flatten(0, 1) # (M*B, Z)
-        self.debug.info(f'pred_masked_s shape: {pred_masked_s.size()}')
+        self.debug.info(f'pred_masked_s shape: {pred_masked_s.shape}')
 
         # 10. target_obs
         self.debug.info(f'10.target_obs')
         target_obs = observation.squeeze(-3).flatten(0, 1)
-        self.debug.info(f'target_obs shape: {target_obs.size()}')
+        self.debug.info(f'target_obs shape: {target_obs.shape}')
         target_obs = self.MTM.transform(target_obs, augment=True)
-        self.debug.info(f'target_obs transformer shape: {target_obs.size()}')
+        self.debug.info(f'target_obs transformer shape: {target_obs.shape}')
         with torch.no_grad():
             target_masked_s = self.MTM.target_encoder(target_obs)
-        self.debug.info(f'target_masked_s shape: {target_masked_s.size()}')
+        self.debug.info(f'target_masked_s shape: {target_masked_s.shape}')
         self.debug.info(f'END OF UPDATE-------------------\n')
         state_loss = self.MTM.spr_loss(pred_masked_s, target_masked_s, observation)
         loss = state_loss
