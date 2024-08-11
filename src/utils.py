@@ -310,22 +310,22 @@ class ReplayBuffer(Dataset):
         self.debug.info(f'Utils.py - sample_spr()')
         
         #1. creating idx
-        self.debug(f'1. creating idxs')
+        self.debug.info(f'1. creating idxs')
         idxs = np.random.randint(0,
                                  self.capacity - self.jumps -
                                  1 if self.full else self.idx - self.jumps - 1,
                                  size=self.auxiliary_task_batch_size*2)
                                 #  size=self.auxiliary_task_batch_size)
-        self.debug(f'idxs: {idxs.shape}')
+        self.debug.info(f'idxs: {idxs.shape}')
         idxs = idxs.reshape(-1, 1)
-        self.debug(f'idxs reshaped: {idxs.shape}')
+        self.debug.info(f'idxs reshaped: {idxs.shape}')
         step = np.arange(self.jumps + 1).reshape(1, -1) # this is a range
         self.debug.info(f' arrange step {step.shape}')
         idxs = idxs + step
         self.debug.info(f' idxs + step {idxs.shape}')
 
         #2. validating idxs
-        self.debug(f'2. validating idxs')
+        self.debug.info(f'2. validating idxs')
         real_dones = torch.as_tensor(self.real_dones[idxs], device=self.device)   # (B, jumps+1, 1)
         self.debug.info(f' real_dones {real_dones.shape}')
         # we add this to avoid sampling the episode boundaries
@@ -338,7 +338,7 @@ class ReplayBuffer(Dataset):
         self.current_auxiliary_batch_size = idxs.shape[0]
 
         #3. sampling from replay buffer
-        self.debug(f'3. sampling from replay buffer')
+        self.debug.info(f'3. sampling from replay buffer')
         obses = torch.as_tensor(self.obses[idxs], device=self.device).float()   # (B, jumps+1, 3*3=9, 100, 100)
         next_obses = torch.as_tensor(self.next_obses[idxs], device=self.device).float()
         actions = torch.as_tensor(self.actions[idxs], device=self.device)
