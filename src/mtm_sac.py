@@ -606,12 +606,13 @@ class MTMSacAgent(object):
         self.log_alpha_optimizer.step()
 
     def update_mtm(self, mtm_kwargs, L, step):
+        self.debug.info(f'MTMSacAgent - update_mtm()')
         #1. sample
         observation = mtm_kwargs["observation"] # [1+self.jumps, B, 9, 1, 100, 100]
         action = mtm_kwargs["action"]   # [1+self.jumps, B, dim_A]
         reward = mtm_kwargs["reward"]   # [1+self.jumps, 1]
         # these non augmented
-        self.debug.info(f'1.Sample')
+        self.debug.info(f'1. Samples')
         self.debug.info(f'observation shape: {observation.size()}')
         self.debug.info(f'action shape: {action.size()}')
         self.debug.info(f'reward shape: {reward.size()}')
@@ -688,7 +689,7 @@ class MTMSacAgent(object):
         with torch.no_grad():
             target_masked_s = self.MTM.target_encoder(target_obs)
         self.debug.info(f'target_masked_s shape: {target_masked_s.size()}')
-        
+        self.debug.info(f'END OF UPDATE-------------------\n')
         state_loss = self.MTM.spr_loss(pred_masked_s, target_masked_s, observation)
         loss = state_loss
 
