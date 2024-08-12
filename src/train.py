@@ -14,7 +14,6 @@ import random
 import sys
 import time
 
-import logging
 import dmc2gym
 import gym
 import hydra
@@ -28,6 +27,9 @@ import utils
 from logger import Logger
 from mtm_sac import MTMSacAgent
 from video import VideoRecorder
+
+import logging
+logging.basicConfig(level=logging.INFO)
 
 
 def evaluate(env, agent, video, num_episodes, L, step, args):
@@ -69,12 +71,11 @@ def evaluate(env, agent, video, num_episodes, L, step, args):
     L.dump(step)
 
 
-def make_agent(obs_shape, action_shape, args, device, debug):
+def make_agent(obs_shape, action_shape, args, device):
     return MTMSacAgent(
             obs_shape=obs_shape,
             action_shape=action_shape,
             device=device,
-            debug=debug,
             augmentation=args.augmentation,
             transition_model_type=args.transition_model_type,
             transition_model_layer_width=args.transition_model_layer_width,
@@ -173,9 +174,6 @@ def main(args: DictConfig) -> None:
                        ts.split('T')[0],
                    ],
                    settings=wandb.Settings(start_method="fork"))
-    # for debug stm pringting
-    logging.basicConfig(level=logging.INFO)
-    debug = logging.getLogger(__name__)
 
     args.work_dir = args.work_dir + '/' + f'{args.agent}_dmc' + '/' + exp_name
     utils.make_dir(args.work_dir)
@@ -199,7 +197,6 @@ def main(args: DictConfig) -> None:
         pre_aug_obs_shape = obs_shape
 
     replay_buffer = utils.ReplayBuffer(
-        debug=debug,
         obs_shape=pre_aug_obs_shape,
         action_shape=action_shape,
         capacity=args.replay_buffer_capacity,
@@ -214,8 +211,7 @@ def main(args: DictConfig) -> None:
     agent = make_agent(obs_shape=obs_shape,
                        action_shape=action_shape,
                        args=args,
-                       device=device,
-                       debug=debug)
+                       device=device)
     
     
     replay_buffer.add_agent(agent)
