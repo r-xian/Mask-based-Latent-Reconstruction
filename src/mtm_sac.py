@@ -266,6 +266,7 @@ class MTM(nn.Module):
                     norm_layer=nn.LayerNorm, attn_head_dim=None) 
             for _ in range(num_attn_layers)])
         self.action_emb = nn.Linear(action_shape[0], encoder_feature_dim)
+        
         self.action_predictor = nn.Sequential(
             nn.Linear(encoder_feature_dim, encoder_feature_dim*2), nn.ReLU(),
             nn.Linear(encoder_feature_dim*2, action_shape[0])
@@ -507,6 +508,7 @@ class MTMSacAgent(object):
         self.MTM = MTM(self.critic, augmentation, aug_prob, encoder_feature_dim, 
             latent_dim, num_attn_layers, num_heads, device, mask_ratio, jumps,
             action_shape, patch_size, block_size).to(device)
+        
         self.mtm_optimizer = torch.optim.Adam(self.MTM.parameters(), lr=0.5 * auxiliary_task_lr)
         warmup = True
         adam_warmup_step = 6e3
@@ -711,7 +713,6 @@ class MTMSacAgent(object):
             self.mtm_lrscheduler.step()
             L.log('train/mtm_lr', self.mtm_optimizer.param_groups[0]['lr'], step)
 
-
     def update(self, replay_buffer, L, step):
         if self.encoder_type == 'pixel':
             elements = replay_buffer.sample_spr()
@@ -723,26 +724,27 @@ class MTMSacAgent(object):
         if step % self.log_interval == 0:
             L.log('train/batch_reward', reward.mean(), step)
         
-        #self.update_critic(obs, action, reward, next_obs, not_done, L, step)
+        self.update_critic(obs, action, reward, next_obs, not_done, L, step)
         self.update_mtm(mtm_kwargs, L, step)
 
-        # if step % self.actor_update_freq == 0:
-        #     self.update_actor_and_alpha(obs, L, step)
-
+        if step % self.actor_update_freq == 0:
+            self.update_actor_and_alpha(obs, L, step)
+        
+        # target networks update
         # if step % self.critic_target_update_freq == 0:
-        #     utils.soft_update_params(self.critic.Q1, self.critic_target.Q1,
-        #                              self.critic_tau)
-        #     utils.soft_update_params(self.critic.Q2, self.critic_target.Q2,
-        #                              self.critic_tau)
-        #     utils.soft_update_params(self.critic.encoder,
-        #                              self.critic_target.encoder,
-        #                              self.encoder_tau)
-        #     utils.soft_update_params(self.MTM.encoder,
-        #                              self.MTM.target_encoder,
-        #                              self.momentum_tau)
-        #     utils.soft_update_params(self.MTM.global_classifier,
-        #                              self.MTM.global_target_classifier,
-        #                              self.momentum_tau)
+            # utils.soft_update_params(self.critic.Q1, self.critic_target.Q1,
+            #                          self.critic_tau)
+            # utils.soft_update_params(self.critic.Q2, self.critic_target.Q2,
+            #                          self.critic_tau)
+            # utils.soft_update_params(self.critic.encoder,
+            #                          self.critic_target.encoder,
+            #                          self.encoder_tau)
+            # utils.soft_update_params(self.MTM.encoder,
+            #                          self.MTM.target_encoder,
+            #                          self.momentum_tau)
+            # utils.soft_update_params(self.MTM.global_classifier,
+            #                          self.MTM.global_target_classifier,
+            #                          self.momentum_tau)
 
     def save(self, model_dir, step):
         torch.save(self.actor.state_dict(),
