@@ -345,6 +345,7 @@ class MTM(nn.Module):
         ) / 255. if images.dtype == torch.uint8 else images
         flat_images = images.reshape(-1, *images.shape[-3:])
         if augment:
+            debug.info(f'transformations = {self.transforms}') 
             processed_images = self.apply_transforms(self.transforms,
                                                      self.eval_transforms,
                                                      flat_images)
@@ -357,18 +358,13 @@ class MTM(nn.Module):
 
     def spr_loss(self, latents, target_latents, observation, no_grad=False):
         # projection and prediction layers
-        debug.info(f'START: MTM - spr_loss()')
         if no_grad:
             with torch.no_grad():
                 global_latents = self.global_classifier(latents)  # proj
-                debug.info(f'projection: {global_latents.shape}')
                 global_latents = self.global_final_classifier(global_latents)  # pred
-                debug.info(f'prediction: {global_latents.shape}')
         else:
             global_latents = self.global_classifier(latents)  # proj
-            debug.info(f'projection: {global_latents.shape}')
             global_latents = self.global_final_classifier(global_latents)  # pred
-            debug.info(f'prediction: {global_latents.shape}')
 
         with torch.no_grad():
             global_targets = self.global_target_classifier(target_latents)
@@ -384,7 +380,6 @@ class MTM(nn.Module):
         loss = self.norm_mse_loss(global_latents, global_targets, mean=False).mean()
         # split to [jumps, bs]
         # return loss.view(-1, observation.shape[1])
-        debug.info(f'END: MTM - spr_loss()')
         return loss
 
     def norm_mse_loss(self, f_x1s, f_x2s, mean=True):
@@ -616,89 +611,55 @@ class MTMSacAgent(object):
         self.log_alpha_optimizer.step()
 
     def update_mtm(self, mtm_kwargs, L, step):
-        debug.info(f'MTMSacAgent - update_mtm()')
         #1. sample
         observation = mtm_kwargs["observation"] # [1+self.jumps, B, 9, 1, 100, 100]
         action = mtm_kwargs["action"]   # [1+self.jumps, B, dim_A]
         reward = mtm_kwargs["reward"]   # [1+self.jumps, 1]
         # these non augmented
-        debug.info(f'1. Samples')
-        debug.info(f'observation shape: {observation.shape}')
-        debug.info(f'action shape: {action.shape}')
-        debug.info(f'reward shape: {reward.shape}')
         
         #2. size
-        debug.info(f'2.Size')
         T, B, C = observation.size()[:3]
         Z = self.encoder_feature_dim
-        debug.info(f'T: {T}, B: {B}, C: {C}, Z: {Z}')
 
         # 3. position
-        debug.info(f'3.Position')
         position = self.MTM.position(T).transpose(0, 1).to(self.device) # (1, T, Z) -> (T, 1, Z)
         expand_pos_emb = position.expand(T, B, -1)  # (T, B, Z)
-        debug.info(f'position shape: {position.shape}')
-        debug.info(f'expand_pos_emb shape: {expand_pos_emb.shape}')
 
         # 4. mask
-        debug.info(f'4.Mask')
         mask = self.MTM.masker()  # (T, 1, 84, 84)
-        debug.info(f'mask shape: {mask.shape}')
         mask = mask[:, None].expand(mask.size(0), B, *mask.size()[1:]).flatten(0, 1)    # (T*B, ...)
-        debug.info(f'mask reshaped: {mask.shape}')
 
         # 5. x -> observation
-        debug.info(f'5.x')
         x = observation.squeeze(-3).flatten(0, 1)
-        debug.info(f'x shape: {x.shape}')
         x = x * (1 - mask.float().to(self.device))
-        debug.info(f'x masked shape: {x.shape}')
         x = self.MTM.transform(x, augment=True)
-        debug.info(f'x transformed shape: {x.shape}')
         x = self.MTM.encoder(x)
-        debug.info(f'x encoded shape: {x.shape}')
         x = x.view(T, B, Z)
-        debug.info(f'x reshaped shape: {x.shape}')
 
         # 6. a_vis -> action
-        debug.info(f'6.a_vis')
         a_vis = action
         a_vis_size = a_vis.size(0)
         a_vis = self.MTM.action_emb(a_vis.flatten(0, 1)).view(a_vis_size, B, Z)
-        debug.info(f'a_vis shape: {a_vis.shape}')
 
         # 7. x_full
-        debug.info(f'7.x_full')
         x_full = torch.zeros(2 * T, B, Z).to(self.device)
-        debug.info(f'x_full shape: {x_full.shape}')
         x_full[::2] = x + expand_pos_emb
-        debug.info(f'x_full shape: {x_full.shape}')
         x_full[1::2] = a_vis + expand_pos_emb
-        debug.info(f'x_full shape: {x_full.shape}')
 
         # 8. transformer
-        debug.info(f'8.transformer')
         x_full = x_full.transpose(0, 1)
         for i in range(len(self.MTM.transformer)):
             x_full = self.MTM.transformer[i](x_full)
         x_full = x_full.transpose(0, 1)
-        debug.info(f'x_full shape: {x_full.shape}')
 
         # 9. pred_masked_s
-        debug.info(f'9.pred_masked_s')
         pred_masked_s = x_full[::2].flatten(0, 1) # (M*B, Z)
-        debug.info(f'pred_masked_s shape: {pred_masked_s.shape}')
 
         # 10. target_obs
-        debug.info(f'10.target_obs')
         target_obs = observation.squeeze(-3).flatten(0, 1)
-        debug.info(f'target_obs shape: {target_obs.shape}')
         target_obs = self.MTM.transform(target_obs, augment=True)
-        debug.info(f'target_obs transformer shape: {target_obs.shape}')
         with torch.no_grad():
             target_masked_s = self.MTM.target_encoder(target_obs)
-        debug.info(f'target_masked_s shape: {target_masked_s.shape}')
-        debug.info(f'END OF UPDATE-------------------\n')
         state_loss = self.MTM.spr_loss(pred_masked_s, target_masked_s, observation)
         loss = state_loss
 
