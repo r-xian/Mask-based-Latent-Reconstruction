@@ -19,8 +19,8 @@ dependencies:
     - chardet
     - gym==0.22
     - termcolor==1.1.0
-    - git+https://github.com/deepmind/dm_control.git
-    - git+https://github.com/denisyarats/dmc2gym.git@06f7e33
+    # - git+https://github.com/deepmind/dm_control.git
+    # - git+https://github.com/denisyarats/dmc2gym.git@06f7e33
     - tb-nightly
     - imageio==2.9.0
     - imageio-ffmpeg==0.4.4

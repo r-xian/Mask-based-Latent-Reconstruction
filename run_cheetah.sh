@@ -14,9 +14,9 @@
 module load miniconda3
 source $EBROOTMINICONDA3/etc/profile.d/conda.sh
 conda activate mlr
-cd /home/s4642506/Mask-based-Latent-Reconstruction/DMControl/src
+cd /scratch/user/s4642506/Mask-based-Latent-Reconstruction/src
 
-srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=1 agent=mtm_sac num_env_steps=100000 work_dir=output wandb=false 
+srun CUDA_VISIBLE_DEVICES=0 python ./train.py --config-path ./configs --config-name cheetah_run jumps=15 seed=1 num_env_steps=100000 work_dir=output wandb=true 
 
 
 # task=finger_spin

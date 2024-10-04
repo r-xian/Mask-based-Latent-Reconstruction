@@ -28,9 +28,6 @@ from logger import Logger
 from mtm_sac import MTMSacAgent
 from video import VideoRecorder
 
-import logging
-logging.basicConfig(level=logging.INFO)
-
 
 def evaluate(env, agent, video, num_episodes, L, step, args):
     all_ep_rewards = []
@@ -137,7 +134,7 @@ def main(args: DictConfig) -> None:
     args.task_name = args.task_name or args.env_name.split('/')[1]
     if args.seed == -1:
         args.seed = np.random.randint(1, 1000000)
-    #torch.cuda.set_device(args.gpuid) #use CUDA_VISIBLE_DEVICES=1 python train.py
+    #torch.cuda.set_device(args.gpuid) #use CUDA_VISIBLE_DEVICES=0 python train.py
     utils.set_seed_everywhere(args.seed)
     env = dmc2gym.make(domain_name=args.domain_name,
                        task_name=args.task_name,
@@ -272,18 +269,10 @@ def main(args: DictConfig) -> None:
 
         next_obs, reward, done, _ = env.step(action)    # BGR not RGB
 
-        # import cv2
-        # left_im = next_obs[:3].transpose(1, 2, 0)
-        # left_im = (((left_im - left_im.min()) / (left_im.max() - left_im.min()) * 1.) * 255).astype(np.uint8)
-        # im = left_im[:, :, ::-1]
-        # cv2.imwrite('raw3.png', im)
-
         # allow infinit bootstrap
         done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(
             done)
         episode_reward += reward
-        #debug.info(f"Train.py - adding obs to buffer: {obs.shape}")
-        #debug.info(f"_____________________________\n")
         replay_buffer.add(obs, action, reward, next_obs, done_bool)
 
         obs = next_obs
@@ -291,5 +280,5 @@ def main(args: DictConfig) -> None:
 
 
 if __name__ == '__main__':
-    #torch.multiprocessing.set_start_method('spawn')
+    torch.multiprocessing.set_start_method('spawn')
     main()

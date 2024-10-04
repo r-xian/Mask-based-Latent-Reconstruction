@@ -16,8 +16,7 @@ import torch.nn as nn
 from skimage.util.shape import view_as_windows
 from torch.utils.data import DataLoader, Dataset
 import math
-import logging
-debug = logging.getLogger(__name__)
+
 
 class InverseSquareRootSchedule(object):
 
@@ -306,53 +305,32 @@ class ReplayBuffer(Dataset):
 
     # v2
     def sample_spr(self):   # sample batch for auxiliary task
-        debug.info(f'Utils.py - sample_spr()')
-        
-        #1. creating idx
-        debug.info(f'1. creating idxs')
         idxs = np.random.randint(0,
                                  self.capacity - self.jumps -
                                  1 if self.full else self.idx - self.jumps - 1,
                                  size=self.auxiliary_task_batch_size*2)
                                 #  size=self.auxiliary_task_batch_size)
-        debug.info(f'   idxs: {idxs.shape}')
         idxs = idxs.reshape(-1, 1)
-        debug.info(f'   idxs reshaped: {idxs.shape}')
         step = np.arange(self.jumps + 1).reshape(1, -1) # this is a range
-        debug.info(f'   arrange step {step.shape}')
         idxs = idxs + step
-        debug.info(f'   idxs + step {idxs.shape}')
 
-        #2. validating idxs
-        debug.info(f'2. validating idxs')
         real_dones = torch.as_tensor(self.real_dones[idxs], device=self.device)   # (B, jumps+1, 1)
-        debug.info(f'   real_dones {real_dones.shape}')
         # we add this to avoid sampling the episode boundaries
         valid_idxs = torch.where((real_dones.mean(1)==0).squeeze(-1))[0].cpu().numpy()
-        debug.info(f'   valid_idxs {valid_idxs.shape}')
         idxs = idxs[valid_idxs] # (B, jumps+1)
-        debug.info(f'   idxs[valid_idxs] {idxs.shape}')
         idxs = idxs[:self.auxiliary_task_batch_size] if idxs.shape[0] >= self.auxiliary_task_batch_size else idxs
-        debug.info(f'   idxs[:self.auxiliary_task_batch_size] {idxs.shape}')
         self.current_auxiliary_batch_size = idxs.shape[0]
 
-        #3. sampling from replay buffer
-        debug.info(f'3. sampling from replay buffer')
         obses = torch.as_tensor(self.obses[idxs], device=self.device).float()   # (B, jumps+1, 3*3=9, 100, 100)
         next_obses = torch.as_tensor(self.next_obses[idxs], device=self.device).float()
         actions = torch.as_tensor(self.actions[idxs], device=self.device)
         rewards = torch.as_tensor(self.rewards[idxs], device=self.device)
         not_dones = torch.as_tensor(self.not_dones[idxs], device=self.device)   # (B, jumps+1, 1)
-        debug.info(f'   obses {obses.shape}')
-        debug.info(f'   actions {actions.shape}')
-
         spr_samples = {
             'observation': obses.transpose(0, 1).unsqueeze(3),
             'action': actions.transpose(0, 1),
             'reward': rewards.transpose(0, 1),
         }
-        
-        debug.info(f'END OF SAMPLING__________\n')
         return (*self.sample_aug(original_augment=True), spr_samples)
 
     def sample_aug(self, original_augment=False):

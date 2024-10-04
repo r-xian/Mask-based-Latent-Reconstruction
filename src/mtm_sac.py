@@ -5,7 +5,7 @@
 
 import copy
 import math
-import logging
+
 import numpy as np
 from numpy.core.fromnumeric import shape
 import torch
@@ -24,9 +24,6 @@ from transition_model import make_transition_model
 import torchvision.transforms._transforms_video as v_transform
 from masking_generator import CubeMaskGenerator
 from vit_modules import Block, trunc_normal_
-import logging
-
-debug = logging.getLogger(__name__)
 
 LOG_FREQ = 10000
 
@@ -266,7 +263,6 @@ class MTM(nn.Module):
                     norm_layer=nn.LayerNorm, attn_head_dim=None) 
             for _ in range(num_attn_layers)])
         self.action_emb = nn.Linear(action_shape[0], encoder_feature_dim)
-        
         self.action_predictor = nn.Sequential(
             nn.Linear(encoder_feature_dim, encoder_feature_dim*2), nn.ReLU(),
             nn.Linear(encoder_feature_dim*2, action_shape[0])
@@ -345,7 +341,6 @@ class MTM(nn.Module):
         ) / 255. if images.dtype == torch.uint8 else images
         flat_images = images.reshape(-1, *images.shape[-3:])
         if augment:
-            debug.info(f'transformations = {self.transforms}') 
             processed_images = self.apply_transforms(self.transforms,
                                                      self.eval_transforms,
                                                      flat_images)
@@ -459,6 +454,7 @@ class MTMSacAgent(object):
         self.detach_encoder = detach_encoder
         self.encoder_type = encoder_type
         self.encoder_feature_dim = encoder_feature_dim
+
         self.jumps = jumps
         self.momentum_tau = momentum_tau
 
@@ -503,7 +499,6 @@ class MTMSacAgent(object):
         self.MTM = MTM(self.critic, augmentation, aug_prob, encoder_feature_dim, 
             latent_dim, num_attn_layers, num_heads, device, mask_ratio, jumps,
             action_shape, patch_size, block_size).to(device)
-        
         self.mtm_optimizer = torch.optim.Adam(self.MTM.parameters(), lr=0.5 * auxiliary_task_lr)
         warmup = True
         adam_warmup_step = 6e3
@@ -611,65 +606,59 @@ class MTMSacAgent(object):
         self.log_alpha_optimizer.step()
 
     def update_mtm(self, mtm_kwargs, L, step):
-        #1. sample
         observation = mtm_kwargs["observation"] # [1+self.jumps, B, 9, 1, 100, 100]
         action = mtm_kwargs["action"]   # [1+self.jumps, B, dim_A]
         reward = mtm_kwargs["reward"]   # [1+self.jumps, 1]
-        # these non augmented
-        
-        #2. size
+
         T, B, C = observation.size()[:3]
         Z = self.encoder_feature_dim
 
-        # 3. position
         position = self.MTM.position(T).transpose(0, 1).to(self.device) # (1, T, Z) -> (T, 1, Z)
         expand_pos_emb = position.expand(T, B, -1)  # (T, B, Z)
 
-        # 4. mask
         mask = self.MTM.masker()  # (T, 1, 84, 84)
         mask = mask[:, None].expand(mask.size(0), B, *mask.size()[1:]).flatten(0, 1)    # (T*B, ...)
 
-        # 5. x -> observation
         x = observation.squeeze(-3).flatten(0, 1)
         x = x * (1 - mask.float().to(self.device))
         x = self.MTM.transform(x, augment=True)
         x = self.MTM.encoder(x)
         x = x.view(T, B, Z)
 
-        # 6. a_vis -> action
         a_vis = action
         a_vis_size = a_vis.size(0)
         a_vis = self.MTM.action_emb(a_vis.flatten(0, 1)).view(a_vis_size, B, Z)
 
-        # 7. x_full
         x_full = torch.zeros(2 * T, B, Z).to(self.device)
         x_full[::2] = x + expand_pos_emb
         x_full[1::2] = a_vis + expand_pos_emb
 
-        # 8. transformer
         x_full = x_full.transpose(0, 1)
         for i in range(len(self.MTM.transformer)):
             x_full = self.MTM.transformer[i](x_full)
         x_full = x_full.transpose(0, 1)
 
-        # 9. pred_masked_s
         pred_masked_s = x_full[::2].flatten(0, 1) # (M*B, Z)
 
-        # 10. target_obs
         target_obs = observation.squeeze(-3).flatten(0, 1)
         target_obs = self.MTM.transform(target_obs, augment=True)
         with torch.no_grad():
             target_masked_s = self.MTM.target_encoder(target_obs)
         state_loss = self.MTM.spr_loss(pred_masked_s, target_masked_s, observation)
+        
         loss = state_loss
+        
 
         self.mtm_optimizer.zero_grad()
         loss.backward()
         model_grad_norm = torch.nn.utils.clip_grad_norm_(
             self.MTM.parameters(), 10)
         self.mtm_optimizer.step()
+        
+        
         if step % self.log_interval == 0:
             L.log('train/mtm_loss', loss, step)
+            
         if self.mtm_lrscheduler is not None:
             self.mtm_lrscheduler.step()
             L.log('train/mtm_lr', self.mtm_optimizer.param_groups[0]['lr'], step)
@@ -690,22 +679,21 @@ class MTMSacAgent(object):
 
         if step % self.actor_update_freq == 0:
             self.update_actor_and_alpha(obs, L, step)
-        
-        # target networks update
-        # if step % self.critic_target_update_freq == 0:
-            # utils.soft_update_params(self.critic.Q1, self.critic_target.Q1,
-            #                          self.critic_tau)
-            # utils.soft_update_params(self.critic.Q2, self.critic_target.Q2,
-            #                          self.critic_tau)
-            # utils.soft_update_params(self.critic.encoder,
-            #                          self.critic_target.encoder,
-            #                          self.encoder_tau)
-            # utils.soft_update_params(self.MTM.encoder,
-            #                          self.MTM.target_encoder,
-            #                          self.momentum_tau)
-            # utils.soft_update_params(self.MTM.global_classifier,
-            #                          self.MTM.global_target_classifier,
-            #                          self.momentum_tau)
+
+        if step % self.critic_target_update_freq == 0:
+            utils.soft_update_params(self.critic.Q1, self.critic_target.Q1,
+                                     self.critic_tau)
+            utils.soft_update_params(self.critic.Q2, self.critic_target.Q2,
+                                     self.critic_tau)
+            utils.soft_update_params(self.critic.encoder,
+                                     self.critic_target.encoder,
+                                     self.encoder_tau)
+            utils.soft_update_params(self.MTM.encoder,
+                                     self.MTM.target_encoder,
+                                     self.momentum_tau)
+            utils.soft_update_params(self.MTM.global_classifier,
+                                     self.MTM.global_target_classifier,
+                                     self.momentum_tau)
 
     def save(self, model_dir, step):
         torch.save(self.actor.state_dict(),
