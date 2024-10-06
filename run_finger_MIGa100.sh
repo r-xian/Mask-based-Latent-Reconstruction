@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=25G
 #SBATCH --job-name=MLR_cheetah
-#SBATCH --gres=gpu:a100
+#SBATCH --gres=gpu:nvidia_a100_80gb_pcie_1g.10gb
 #SBATCH --time=24:00:00
 #SBATCH --partition=gpu_cuda
 #SBATCH --account=a_lead
