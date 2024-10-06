@@ -161,7 +161,6 @@ def main(args: DictConfig) -> None:
 
     if args.wandb:
         wandb.init(project=f'VisualRL',
-                   config=args,
                    name=exp_name,
                    group=ori_exp_name,
                    tags=[

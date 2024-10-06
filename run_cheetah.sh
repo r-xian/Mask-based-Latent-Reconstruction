@@ -16,7 +16,7 @@ source $EBROOTMINICONDA3/etc/profile.d/conda.sh
 conda activate mlr
 cd /scratch/user/s4642506/Mask-based-Latent-Reconstruction/src
 
-srun CUDA_VISIBLE_DEVICES=0 python ./train.py --config-path ./configs --config-name cheetah_run jumps=15 seed=1 num_env_steps=100000 work_dir=output wandb=true 
+srun CUDA_VISIBLE_DEVICES=0 python ./train.py --config-path ./configs --config-name cheetah_run jumps=15 seed=1 num_env_steps=100000 work_dir=output wandb=false agent=mtm_sac 
 
 
 # task=finger_spin
