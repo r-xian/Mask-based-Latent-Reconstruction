@@ -217,6 +217,9 @@ def main(args: DictConfig) -> None:
     episode, episode_reward, done = 0, 0, True
     start_time = time.time()
 
+    print(args)
+    print(device)
+
     for step in range(0, args.num_env_steps, args.action_repeat):
         # evaluate agent periodically
 
