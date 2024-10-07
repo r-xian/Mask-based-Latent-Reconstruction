@@ -9,10 +9,10 @@ dependencies:
   - absl-py=0.13.0
   - pyparsing=2.4.7
   - jupyterlab=3.0.14
-  - scikit-image=0.18.1
-  - nvidia::cudatoolkit=11.1
-  - pytorch::pytorch==1.10.0
-  - pytorch::torchvision=0.11.0
+  - scikit-image=0.18.1 #py3.8+
+  - nvidia::cudatoolkit=11.8 # 3.8+
+  - pytorch::pytorch==2.0.0 # using pytorch 2.0 with cuda 11.8 
+  - pytorch::torchvision=0.15.0
   - pytorch::torchaudio
   - pip:
     - mujoco-py<2.2,>=2.1
@@ -20,7 +20,7 @@ dependencies:
     - gym==0.22
     - termcolor==1.1.0
     # - git+https://github.com/deepmind/dm_control.git unreleased
-    - dm_control # use this instead of the above
+    - dm_control
     - git+https://github.com/denisyarats/dmc2gym.git@06f7e33
     - tb-nightly
     - imageio==2.9.0

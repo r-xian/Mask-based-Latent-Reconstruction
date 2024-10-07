@@ -10,7 +10,7 @@ dependencies:
   - pyparsing=2.4.7
   - jupyterlab=3.0.14
   - scikit-image=0.18.1
-  - nvidia::cudatoolkit=11.1
+  - nvidia::cudatoolkit=11.8 # try to use cuda 11.8
   - pytorch::pytorch==1.10.0
   - pytorch::torchvision=0.11.0
   - pytorch::torchaudio
