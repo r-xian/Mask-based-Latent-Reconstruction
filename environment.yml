@@ -38,3 +38,4 @@ dependencies:
     - absl-py
     - timm==1.0.9 # py3.8+
     - torchelastic==0.2.2 #py3.8+
+    - kornia==0.4.1
