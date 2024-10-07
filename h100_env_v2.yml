@@ -1,7 +1,6 @@
-name: mlr
+name: h100_v1
 channels:
   - defaults
-    #- conda-forge
 dependencies:
   - python=3.8
   - pip=21.1.3
