@@ -5,7 +5,7 @@
 #SBATCH --mem=30G
 #SBATCH --job-name=MLR_walker_walk
 #SBATCH --gres=gpu:h100
-#SBATCH --time=32:00:00
+#SBATCH --time=50:00:00
 #SBATCH --partition=gpu_cuda
 #SBATCH --account=a_lead
 #SBATCH -o walker_walk.out
@@ -13,7 +13,7 @@
 
 module load miniconda3
 source $EBROOTMINICONDA3/etc/profile.d/conda.sh
-conda activate h100_v1
+conda activate tmv2
 cd /scratch/user/s4642506/Mask-based-Latent-Reconstruction/src
 
 export CUDA_VISIBLE_DEVICES=0
