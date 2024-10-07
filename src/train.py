@@ -27,6 +27,7 @@ import utils
 from logger import Logger
 from mtm_sac import MTMSacAgent
 from video import VideoRecorder
+from tqdm import tqdm
 
 
 def evaluate(env, agent, video, num_episodes, L, step, args):
@@ -220,7 +221,7 @@ def main(args: DictConfig) -> None:
     print(args)
     print(device)
 
-    for step in range(0, args.num_env_steps, args.action_repeat):
+    for step in tqdm(range(0, args.num_env_steps, args.action_repeat)):
         # evaluate agent periodically
 
         if step % args.eval_freq == 0:
