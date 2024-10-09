@@ -154,25 +154,11 @@ def main(args: DictConfig) -> None:
 
     # make directory
     ts = time.gmtime()
-    ts = time.strftime("%m%dT%H", ts)
-    ori_exp_name = 'Ablation-FeatMasking'    # time span - mask ratio - block size - grid size
-    env_name = ori_exp_name + '-' + args.domain_name + '-' + args.task_name
-    exp_name = env_name + ts + '-im' + str(args.image_size) +'-b'  \
-    + str(args.batch_size) + '-s' + str(args.seed) + '-' + args.agent
+    ts = time.strftime("%d%b-%H%M", ts)
+    env_name = args.domain_name + '_' + args.task_name
+    exp_name = env_name + str(args.seed) + '_' + ts
 
-    if args.wandb:
-        wandb.init(project=f'VisualRL',
-                   name=exp_name,
-                   group=ori_exp_name,
-                   tags=[
-                       env_name,
-                       args.agent,
-                       str(args.seed),
-                       ts.split('T')[0],
-                   ],
-                   settings=wandb.Settings(start_method="fork"))
-
-    args.work_dir = args.work_dir + '/' + f'{args.agent}_dmc' + '/' + exp_name
+    args.work_dir = args.work_dir + '/' + exp_name
     utils.make_dir(args.work_dir)
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))

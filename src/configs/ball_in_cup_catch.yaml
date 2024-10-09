@@ -1,7 +1,7 @@
 # environment
 env_name: ball_in_cup/catch
-domain_name: null
-task_name: null
+domain_name: ball_in_cup
+task_name: catch
 pre_transform_image_size: 100
 image_size: 84
 action_repeat: 4

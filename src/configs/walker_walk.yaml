@@ -1,7 +1,7 @@
 # environment
 env_name: walker/walk
-domain_name: null
-task_name: null
+domain_name: walker
+task_name: walk
 pre_transform_image_size: 100
 image_size: 84
 action_repeat: 2
