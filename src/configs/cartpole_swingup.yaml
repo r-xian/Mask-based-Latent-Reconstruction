@@ -1,7 +1,7 @@
 # environment
 env_name: cartpole/swingup
-domain_name: null
-task_name: null
+domain_name: cartpole
+task_name: swingup
 pre_transform_image_size: 100
 image_size: 84
 action_repeat: 8

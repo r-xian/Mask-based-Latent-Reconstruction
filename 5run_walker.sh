@@ -17,8 +17,8 @@ conda activate tmv2
 cd /scratch/user/s4642506/Mask-based-Latent-Reconstruction/src
 
 export CUDA_VISIBLE_DEVICES=0
-srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=1 num_env_steps=105000 work_dir=output/walker_walk_1 wandb=true agent=mtm_sac 
-srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=2 num_env_steps=105000 work_dir=output/walker_walk_2 wandb=true agent=mtm_sac 
-srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=3 num_env_steps=105000 work_dir=output/walker_walk_3 wandb=true agent=mtm_sac 
-srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=4 num_env_steps=105000 work_dir=output/walker_walk_4 wandb=true agent=mtm_sac 
-srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=5 num_env_steps=105000 work_dir=output/walker_walk_5 wandb=true agent=mtm_sac 
+srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=1 num_env_steps=105000 wandb=true agent=mtm_sac 
+srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=2 num_env_steps=105000 wandb=true agent=mtm_sac 
+srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=3 num_env_steps=105000 wandb=true agent=mtm_sac 
+srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=4 num_env_steps=105000 wandb=true agent=mtm_sac 
+srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=5 num_env_steps=105000 wandb=true agent=mtm_sac 

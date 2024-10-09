@@ -1,7 +1,7 @@
 # environment
 env_name: finger/spin
-domain_name: null
-task_name: null
+domain_name: finger
+task_name: spin
 pre_transform_image_size: 100
 image_size: 84
 action_repeat: 2
