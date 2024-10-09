@@ -67,7 +67,6 @@ warmup: false
 seed: null
 gpuid: null
 seed_and_gpuid: [-1, 0]
-work_dir: ./tests
 save_tb: false
 save_buffer: false
 save_video: false
