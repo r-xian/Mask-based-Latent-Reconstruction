@@ -127,7 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-src/outputs
+src/outputs/
+
 
 # output files
 cheetah*
