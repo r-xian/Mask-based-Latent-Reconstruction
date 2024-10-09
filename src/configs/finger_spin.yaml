@@ -68,7 +68,6 @@ warmup: false
 seed: null
 gpuid: null
 seed_and_gpuid: [-1, 0]
-work_dir: ???
 save_tb: true
 save_buffer: false
 save_video: false
@@ -83,3 +82,7 @@ mask_ratio: 0.5
 patch_size: 10
 block_size: 8
 num_attn_layers: 2
+
+hydra:
+  run:
+    dir: ./outputs/${domain_name}_${task_name}_${seed}

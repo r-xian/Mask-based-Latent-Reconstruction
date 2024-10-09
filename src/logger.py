@@ -101,19 +101,16 @@ class MetersGroup(object):
 
 
 class Logger(object):
-    def __init__(self, log_dir, exp_name, use_tb=True, use_wandb=False, config='rl'):
-        self._log_dir = log_dir
+    def __init__(self, exp_name, use_tb=True, use_wandb=False, config='rl'):
         if use_tb:
-            tb_dir = os.path.join(log_dir, 'tb')
+            tb_dir = 'tb'
             if os.path.exists(tb_dir):
                 shutil.rmtree(tb_dir)
             self._sw = SummaryWriter(tb_dir)
         else:
             self._sw = None
-        self._train_mg = MetersGroup(os.path.join(log_dir, 'train_info.log'),
-                                     formating=FORMAT_CONFIG[config]['train'])
-        self._eval_mg = MetersGroup(os.path.join(log_dir, 'eval_info.log'),
-                                    formating=FORMAT_CONFIG[config]['eval'])
+        self._train_mg = MetersGroup('train_info.log', formating=FORMAT_CONFIG[config]['train'])
+        self._eval_mg = MetersGroup('eval_info.log', formating=FORMAT_CONFIG[config]['eval'])
         self.use_wandb = use_wandb
         if self.use_wandb:
             wandb.init(project=f'thesis_method', name=f'MLR_{exp_name}')

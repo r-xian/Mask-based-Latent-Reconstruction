@@ -67,7 +67,7 @@ warmup: false
 seed: null
 gpuid: null
 seed_and_gpuid: [-1, 0]
-work_dir: /mnt/output/
+work_dir: ./tests
 save_tb: false
 save_buffer: false
 save_video: false
@@ -84,3 +84,4 @@ emb_action: true
 n_embd: 50
 adam_warmup_step: 1e3 # 0 for disabling warmup
 sar_loss_weight: 1
+

@@ -153,16 +153,14 @@ def main(args: DictConfig) -> None:
         env = utils.FrameStack(env, k=args.frame_stack)
 
     # make directory
-    ts = time.gmtime()
+    ts = time.localtime()
     ts = time.strftime("%d%b-%H%M", ts)
     env_name = args.domain_name + '_' + args.task_name
-    exp_name = env_name + str(args.seed) + '_' + ts
-
-    args.work_dir = args.work_dir + '/' + exp_name
-    utils.make_dir(args.work_dir)
-    video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
-    model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
-    buffer_dir = utils.make_dir(os.path.join(args.work_dir, 'buffer'))
+    exp_name = env_name + '_' + str(args.seed) + '_' + ts
+    
+    video_dir = utils.make_dir('video')
+    model_dir = utils.make_dir('model')
+    buffer_dir = utils.make_dir('buffer')
 
     video = VideoRecorder(video_dir if args.save_video else None)
 
@@ -199,13 +197,12 @@ def main(args: DictConfig) -> None:
     
     replay_buffer.add_agent(agent)
 
-    L = Logger(args.work_dir, use_tb=args.save_tb, use_wandb=args.wandb)
+    L = Logger(exp_name, use_tb=args.save_tb, use_wandb=args.wandb)
 
     episode, episode_reward, done = 0, 0, True
     start_time = time.time()
 
     print(args)
-    print(device)
 
     for step in tqdm(range(0, args.num_env_steps, args.action_repeat)):
         # evaluate agent periodically
