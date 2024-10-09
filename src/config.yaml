@@ -85,3 +85,6 @@ n_embd: 50
 adam_warmup_step: 1e3 # 0 for disabling warmup
 sar_loss_weight: 1
 
+hydra:
+  run:
+    dir: ./outputs/${domain_name}_${task_name}_${seed}

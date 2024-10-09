@@ -86,5 +86,4 @@ num_attn_layers: 2
 
 hydra:
   run:
-    dir: ./outputs
-    subdir: ${hydra.job.num}
+    dir: ./outputs/${domain_name}_${task_name}_${seed}
