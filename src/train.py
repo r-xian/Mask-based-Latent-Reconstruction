@@ -56,7 +56,7 @@ def evaluate(env, agent, video, num_episodes, L, step, args):
                 episode_reward += reward
 
             video.save('%d.mp4' % step)
-            L.log('eval/' + prefix + 'episode_reward', episode_reward, step)
+            L.log(f'eval/episode_{i+1}_reward', episode_reward, step)
             all_ep_rewards.append(episode_reward)
 
         L.log('eval/' + prefix + 'eval_time', time.time() - start_time, step)
@@ -266,5 +266,5 @@ def main(args: DictConfig) -> None:
 
 
 if __name__ == '__main__':
-    torch.multiprocessing.set_start_method('spawn')
+    #torch.multiprocessing.set_start_method('spawn')
     main()
