@@ -2,7 +2,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=30G
+#SBATCH --mem=32G
 #SBATCH --job-name=MLR_cartpole_swingup
 #SBATCH --gres=gpu:h100
 #SBATCH --time=50:00:00
@@ -20,5 +20,5 @@ export CUDA_VISIBLE_DEVICES=0
 srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=1 num_env_steps=105000 wandb=true agent=mtm_sac 
 srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=2 num_env_steps=105000 wandb=true agent=mtm_sac 
 srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=3 num_env_steps=105000 wandb=true agent=mtm_sac 
-srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=4 num_env_steps=105000 wandb=true agent=mtm_sac 
-srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=5 num_env_steps=105000 wandb=true agent=mtm_sac 
+#srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=4 num_env_steps=105000 wandb=true agent=mtm_sac 
+#srun python ./train.py --config-path ./configs --config-name cartpole_swingup jumps=15 seed=5 num_env_steps=105000 wandb=true agent=mtm_sac 
