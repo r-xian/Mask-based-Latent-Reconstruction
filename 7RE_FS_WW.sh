@@ -5,7 +5,7 @@
 #SBATCH --mem=30G
 #SBATCH --job-name=MLR_RE_FS_WW
 #SBATCH --gres=gpu
-#SBATCH --time=80:00:00
+#SBATCH --time=70:00:00
 #SBATCH --partition=gpu_cuda
 #SBATCH --account=a_lead
 #SBATCH -o RE_FS_WW.out
@@ -18,13 +18,13 @@ cd /scratch/user/s4642506/Mask-based-Latent-Reconstruction/src
 
 export CUDA_VISIBLE_DEVICES=0
 #reacher_easy 1,2,3
-srun python ./train.py --config-path ./configs --config-name reacher_easy jumps=15 seed=1 num_env_steps=105000 wandb=true agent=mtm_sac 
-srun python ./train.py --config-path ./configs --config-name reacher_easy jumps=15 seed=2 num_env_steps=105000 wandb=true agent=mtm_sac 
+srun   
+srun python ./train.py --config-path ./configs --config-name reacher_easy jumps=15 seed=2 num_env_steps=105000 wandb=true agent=mtm_sac #4 hours
 srun python ./train.py --config-path ./configs --config-name reacher_easy jumps=15 seed=3 num_env_steps=105000 wandb=true agent=mtm_sac 
 #finger spin 2, 3
-srun python ./train.py --config-path ./configs --config-name finger_spin jumps=15 seed=2 num_env_steps=105000 wandb=true agent=mtm_sac 
+srun python ./train.py --config-path ./configs --config-name finger_spin jumps=15 seed=2 num_env_steps=105000 wandb=true agent=mtm_sac #8 hours
 srun python ./train.py --config-path ./configs --config-name finger_spin jumps=15 seed=3 num_env_steps=105000 wandb=true agent=mtm_sac 
 # walker_walk 1,2,3
-srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=1 num_env_steps=105000 wandb=true agent=mtm_sac 
+srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=1 num_env_steps=105000 wandb=true agent=mtm_sac # 8 hours
 srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=2 num_env_steps=105000 wandb=true agent=mtm_sac 
 srun python ./train.py --config-path ./configs --config-name walker_walk jumps=15 seed=3 num_env_steps=105000 wandb=true agent=mtm_sac 
